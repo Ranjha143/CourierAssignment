@@ -164,8 +164,8 @@ namespace Order_Processing
                 var courierQuery = " select * from CUSTOM_ORDER_COURIER where IS_ENABLED = 1 order by PRIORITY_ORDER ";
                 Program.CourierList = (await connection.QueryAsync<CUSTOM_ORDER_COURIER>(courierQuery)).ToList();
 
-                var pickLocQry = "select To_char(PICKUP_ID) as PICKUP_ID, PICKUP_NAME, COURIER_ID from custom_order_pickup_location";
-                Program.PickUpLocations = (connection.QueryAsync<CUSTOM_ORDER_PICKUP_LOCATION>(pickLocQry).Result).ToList();
+                //var pickLocQry = "select To_char(PICKUP_ID) as PICKUP_ID, PICKUP_NAME, COURIER_ID from custom_order_pickup_location";
+                //Program.PickUpLocations = (connection.QueryAsync<CUSTOM_ORDER_PICKUP_LOCATION>(pickLocQry).Result).ToList() ;
 
                 foreach (var courier in Program.CourierList)
                 {
