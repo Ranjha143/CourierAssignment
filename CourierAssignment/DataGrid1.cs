@@ -136,7 +136,8 @@ namespace Order_Processing
                         select ROW_ID as Row_Id ,'' as StoreName, shopify_order_no as ShopifyOrderNo, bt_first_name || ' ' || bt_last_name as CustomerName,
                         ST_ADDRESS_LINE as DeliveryAddress, ST_PRIMARY_PHONE_NO as PhoneNo, ST_CITY as OriginalCity, ST_COUNTRY as Country, ST_EMAIL as CustomerEmail, 
                         tracking_no as TrackingNo, COURIER_ERROR_MESSAGE, ORDER_CREATE_DATE
-                        from CUSTOM_ORDER_PICKER_DOC where ORDER_CANCELED = 0 AND COURIER_ASSIGNMENT_FLAG = 0 AND Tracking_No is null
+                        from CUSTOM_ORDER_PICKER_DOC
+                        -- where ORDER_CANCELED = 0 AND COURIER_ASSIGNMENT_FLAG = 0 AND Tracking_No is null
                     ";
 
             using (IDbConnection connection = new OracleConnection(Program.ConnectionString))
