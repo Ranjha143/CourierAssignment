@@ -80,50 +80,67 @@ namespace Order_Processing
 
         private async void sfDataGrid_CellButtonClick(object sender, CellButtonClickEventArgs e)
         {
-            var recordEntry = e.Record as Syncfusion.WinForms.DataGrid.DataRow;
-            var orderObject = recordEntry.RowData;
-            var orderJson = JsonConvert.SerializeObject(orderObject);
-
-            var orderToUpdate = JsonConvert.DeserializeObject<FailedOrderInfo>(orderJson);
-
-            if (orderToUpdate.COURIER_ID > 0)
+            try
             {
-                DialogResult result = MessageBox.Show(
-                $"Are you sure you want to Update order # {orderToUpdate.ShopifyOrderNo} ?",
-                "Confirmation",
-                MessageBoxButtons.YesNo, // Yes and No buttons
-                MessageBoxIcon.Question  // Question mark icon
-                );
 
-                if (result == DialogResult.Yes)
+
+
+                var recordEntry = e.Record as Syncfusion.WinForms.DataGrid.DataRow;
+                var orderObject = recordEntry.RowData;
+                var orderJson = JsonConvert.SerializeObject(orderObject);
+
+                var orderToUpdate = JsonConvert.DeserializeObject<FailedOrderInfo>(orderJson);
+
+                if (orderToUpdate.COURIER_ID > 0)
                 {
+                    DialogResult result = MessageBox.Show(
+                    $"Are you sure you want to Update order # {orderToUpdate.ShopifyOrderNo} ?",
+                    "Confirmation",
+                    MessageBoxButtons.YesNo, // Yes and No buttons
+                    MessageBoxIcon.Question  // Question mark icon
+                    );
 
-                    if (orderToUpdate.SuggestedCity == 0)
+                    if (result == DialogResult.Yes)
                     {
-                        orderToUpdate.SuggestedCity = CityList.Where(c => c.CITY_NAME == orderToUpdate.OriginalCity).Select(c => c.CITY_ID).FirstOrDefault();
-                        orderToUpdate.SuggestedCityName = orderToUpdate.OriginalCity;
-                    }
-                    else
-                    {
-                        orderToUpdate.SuggestedCityName = CityList.Where(c => c.CITY_ID == orderToUpdate.SuggestedCity).Select(c => c.CITY_NAME).FirstOrDefault();
-                    }
 
-                    var updateQry = $"update CUSTOM_ORDER_PICKER_DOC set BT_CITY = '{orderToUpdate.SuggestedCityName}', ST_CITY ='{orderToUpdate.SuggestedCityName}', SUGGESTED_CITY ='{orderToUpdate.SuggestedCityName}', SUGGESTED_COURIER_ID = {orderToUpdate.COURIER_ID},SUGGESTED_PICKUP_ID = {orderToUpdate.PICKUP_ID} ,ERRORFLAG = 0, PERMANENT_COURIER_ERROR = 0, COURIER_ERROR_FLAG = 0, COURIER_ASSIGNMENT_FLAG = 1, COURIER_ERROR_MESSAGE = null,COURIER_RETRY = 0 where ROW_ID = {orderToUpdate.Row_Id} AND SHOPIFY_ORDER_NO ='{orderToUpdate.ShopifyOrderNo}'";
+                        if (orderToUpdate.SuggestedCity == 0)
+                        {
+                            orderToUpdate.SuggestedCity = CityList.Where(c => c.CITY_NAME == orderToUpdate.OriginalCity).Select(c => c.CITY_ID).FirstOrDefault();
+                            orderToUpdate.SuggestedCityName = orderToUpdate.OriginalCity;
+                        }
+                        else
+                        {
+                            orderToUpdate.SuggestedCityName = CityList.Where(c => c.CITY_ID == orderToUpdate.SuggestedCity).Select(c => c.CITY_NAME).FirstOrDefault();
+                        }
 
-                    using (IDbConnection connection = new OracleConnection(Program.ConnectionString))
-                    {
-                        var res = await connection.ExecuteAsync(updateQry);
+
+                        var updateQry = $"update CUSTOM_ORDER_PICKER_DOC set BT_CITY = '{orderToUpdate.SuggestedCityName}', ST_CITY ='{orderToUpdate.SuggestedCityName}', SUGGESTED_CITY ='{orderToUpdate.SuggestedCityName}', SUGGESTED_COURIER_ID = {orderToUpdate.COURIER_ID},SUGGESTED_PICKUP_ID = {orderToUpdate.PICKUP_ID} ,ERRORFLAG = 0, PERMANENT_COURIER_ERROR = 0, COURIER_ERROR_FLAG = 0, COURIER_ASSIGNMENT_FLAG = 1, COURIER_ERROR_MESSAGE = null,COURIER_RETRY = 0 where ROW_ID = {orderToUpdate.Row_Id} AND SHOPIFY_ORDER_NO ='{orderToUpdate.ShopifyOrderNo}'";
+
+                        using (IDbConnection connection = new OracleConnection(Program.ConnectionString))
+                        {
+                            var res = await connection.ExecuteAsync(updateQry);
+                        }
                     }
                 }
+                else
+                {
+                    MessageBox.Show(
+                    $"Nothing to Update. Please select Courier Name!",
+                    "Confirmation",
+                    MessageBoxButtons.OK, // Yes and No buttons
+                    MessageBoxIcon.Exclamation// Question mark icon
+                    );
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show(
-                $"Nothing to Update. Please select Courier Name!",
-                "Confirmation",
-                MessageBoxButtons.OK, // Yes and No buttons
-                MessageBoxIcon.Exclamation// Question mark icon
-                );
+
+                 MessageBox.Show(
+                    $"Error while updating order. Error Message: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK, // Yes and No buttons
+                    MessageBoxIcon.Error// Question mark icon
+                    );
             }
         }
         List<FailedOrderInfo> failedOrderInfos = new List<FailedOrderInfo>();
@@ -137,7 +154,7 @@ namespace Order_Processing
                         ST_ADDRESS_LINE as DeliveryAddress, ST_PRIMARY_PHONE_NO as PhoneNo, ST_CITY as OriginalCity, ST_COUNTRY as Country, ST_EMAIL as CustomerEmail, 
                         tracking_no as TrackingNo, COURIER_ERROR_MESSAGE, ORDER_CREATE_DATE
                         from CUSTOM_ORDER_PICKER_DOC
-                        -- where ORDER_CANCELED = 0 AND COURIER_ASSIGNMENT_FLAG = 0 AND Tracking_No is null
+                         where ORDER_CANCELED = 0 AND COURIER_ASSIGNMENT_FLAG = 0 AND Tracking_No is null
                     ";
 
             using (IDbConnection connection = new OracleConnection(Program.ConnectionString))
@@ -165,8 +182,8 @@ namespace Order_Processing
                 var courierQuery = " select * from CUSTOM_ORDER_COURIER where IS_ENABLED = 1 order by PRIORITY_ORDER ";
                 Program.CourierList = (await connection.QueryAsync<CUSTOM_ORDER_COURIER>(courierQuery)).ToList();
 
-                //var pickLocQry = "select To_char(PICKUP_ID) as PICKUP_ID, PICKUP_NAME, COURIER_ID from custom_order_pickup_location";
-                //Program.PickUpLocations = (connection.QueryAsync<CUSTOM_ORDER_PICKUP_LOCATION>(pickLocQry).Result).ToList() ;
+                var pickLocQry = "select To_char(PICKUP_ID) as PICKUP_ID, PICKUP_NAME, COURIER_ID from custom_order_pickup_location";
+                Program.PickUpLocations = (connection.QueryAsync<CUSTOM_ORDER_PICKUP_LOCATION>(pickLocQry).Result).ToList();
 
                 foreach (var courier in Program.CourierList)
                 {
@@ -203,6 +220,10 @@ namespace Order_Processing
 
         private async void button1_Click(object sender, EventArgs e)
         {
+            try
+            {
+
+            
             List<OrderstoUpdate> dataRows = JsonConvert.DeserializeObject<List<OrderstoUpdate>>(JsonConvert.SerializeObject(sfDataGrid.DataSource));
 
             var selectedRows = dataRows.Where(row => row.COURIER_ID > 0)
@@ -237,6 +258,18 @@ namespace Order_Processing
                     MessageBoxButtons.OK, // Yes and No buttons
                     MessageBoxIcon.Exclamation// Question mark icon
                     );
+            }
+
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show(
+                   $"Error while updating order. Error Message: {ex.Message}",
+                   "Error",
+                   MessageBoxButtons.OK, // Yes and No buttons
+                   MessageBoxIcon.Error// Question mark icon
+                   );
             }
         }
 
